@@ -1,0 +1,8 @@
+com/reminder/controllers/MainController.class
+com/reminder/controllers/SendReminder.class
+com/reminder/DemoApplication.class
+com/reminder/models/LoginResponseModel.class
+com/reminder/models/User.class
+com/reminder/models/Reminder.class
+com/reminder/models/Register.class
+com/reminder/models/RequestModel.class
