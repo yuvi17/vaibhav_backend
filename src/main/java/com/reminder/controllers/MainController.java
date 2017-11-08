@@ -2,6 +2,7 @@ package com.reminder.controllers;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import com.reminder.models.LoginResponseModel;
 import com.reminder.models.Register;
@@ -30,6 +32,8 @@ public class MainController {
 	
 	@Autowired
 	private JavaMailSenderImpl mailSender;
+	
+	
 	
 	@CrossOrigin
 	@RequestMapping("/login")
@@ -73,8 +77,9 @@ public class MainController {
 			response.isValid = true;
 		}
 		catch(Exception e) {
+			System.out.println(e.toString());
 			response.status = "Error";
-			response.message = "User " + register.getName() + " could not be added";
+			response.message = "User " + register.getName() + " could not be added" + e.toString();
 			response.isValid = false;
 		}
 		return response;
@@ -86,14 +91,15 @@ public class MainController {
 	public LoginResponseModel Reminder(@RequestBody Reminder reminder) {
 		LoginResponseModel response = new LoginResponseModel();
 		try {
-			String sql = "INSERT into reminder(name,time,email,repeat,active,description) values(?,?,?,?,?,?)";
+			String sql = "INSERT into reminder(name,time,email,description,active,repeated) values(?,?,?,?,?,?)";
 			jdbcTemplate.update(sql,new Object[] {reminder.getName(),reminder.getTime(),reminder.getEmail(),
-													reminder.isRepeat(), reminder.isActive(), reminder.getDescription() });
+													reminder.getDescription(),true,true });
 			response.status = "Success";
 			response.message = "Reminder " + reminder.getName() + " added";
 			response.isValid = true;
 		}
 		catch(Exception e) {
+			System.out.println(e.toString());
 			response.status = "Error";
 			response.message = "Reminder " + reminder.getName() + " could not be added";
 			response.isValid = false;
@@ -121,18 +127,21 @@ public class MainController {
 	}
 	
 	public boolean sendReminderAsEmail(Map<String,Object> m) {
+		
+		RestTemplate restTemplate = new RestTemplate();
+		
+		
+		Map<String,String> body = new HashMap<String,String>();
+		body.put("email", m.get("email").toString());
+		body.put("message", m.get("description").toString());
+		body.put("name", m.get("name").toString());
+		
+		
+		
 		try {
-			MimeMessage message = mailSender.createMimeMessage();
-	        MimeMessageHelper helper = new MimeMessageHelper(message);
-	        
-	        helper.setTo((m.get("email")).toString());
-	        helper.setText(m.get("description").toString());
-	        helper.setSubject("Reminder for " + m.get("name").toString());
-	        mailSender.send(message);
-	        System.out.println("Email sent");
-	        return true;
+			restTemplate.postForObject("http://localhost:9191/mail/contact",body, new HashMap<String,Object>().getClass());
+			return true;
 		} catch(Exception e) {
-			System.out.println(e.toString());
 			return false;
 		}
 	}
@@ -167,6 +176,24 @@ public class MainController {
 				continue;
 			}
 			
+		}
+	}
+	
+	@RequestMapping("/send")
+	public Boolean sendEmail() {
+		try {
+			MimeMessage message = mailSender.createMimeMessage();
+	        MimeMessageHelper helper = new MimeMessageHelper(message);
+	        
+	        helper.setTo("kumaryuvraj118@gmail.com");
+	        helper.setText("TEST");
+	        helper.setSubject("TEST");
+	        mailSender.send(message);
+	        System.out.println("Email sent");
+	        return true;
+		} catch(Exception e) {
+			System.out.println(e.toString());
+			return false;
 		}
 	}
 
