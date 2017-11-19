@@ -1,5 +1,6 @@
 package com.reminder.controllers;
 
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -50,7 +51,7 @@ public class MainController {
 		}
 		String originalPassword = (String)list.get(0).get("password");
 		System.out.println(originalPassword);
-		if(originalPassword.equals(body.getPassword())) {
+		if(encryptPassword(originalPassword).equals(encryptPassword(body.getPassword()))) {
 			response.message = "Welcome User";
 			response.isValid = true;
 			response.status = "Success";
@@ -71,7 +72,7 @@ public class MainController {
 		LoginResponseModel response = new LoginResponseModel();
 		try {
 			String sql = "INSERT into user(name,email,password) values(?,?,?)";
-			jdbcTemplate.update(sql,new Object[] {register.getName(),register.getEmail(), register.getPassword() });
+			jdbcTemplate.update(sql,new Object[] {register.getName(),register.getEmail(), encryptPassword(register.getPassword()) });
 			response.status = "Success";
 			response.message = "User " + register.getName() + " added";
 			response.isValid = true;
@@ -195,6 +196,34 @@ public class MainController {
 			System.out.println(e.toString());
 			return false;
 		}
+	}
+	
+	private String encryptPassword(String password) {
+		String passwordToHash = "password";
+        String generatedPassword = null;
+        try {
+            // Create MessageDigest instance for MD5
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            //Add password bytes to digest
+            md.update(passwordToHash.getBytes());
+            //Get the hash's bytes
+            byte[] bytes = md.digest();
+            //This bytes[] has bytes in decimal format;
+            //Convert it to hexadecimal format
+            StringBuilder sb = new StringBuilder();
+            for(int i=0; i< bytes.length ;i++)
+            {
+                sb.append(Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1));
+            }
+            //Get complete hashed password in hex format
+            generatedPassword = sb.toString();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        return (generatedPassword);
+		
 	}
 
 }
